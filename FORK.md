@@ -13,8 +13,8 @@ remain unchanged. Version numbers are unchanged. There is no updater.
 The display-name change retains this fork's bundle identifier and preferences
 domain; it does not migrate settings or replace any installed or working copy.
 
-Direct numbered-space shortcuts gain a configurable modifier. Physical vertical
-swipes also receive the macOS 27 natural-scrolling coordinate correction described
+Direct numbered-space shortcuts gain a configurable modifier. Outgoing vertical
+gestures also receive the macOS 27 natural-scrolling coordinate correction described
 below. Other physical swipe behavior, animation settings and Mission Control
 shortcut lookup retain upstream behavior. The keyboard settings picker offers **Command (⌘)** and
 **Control (⌃)**. Command is the default. The selected value is stored as field 9
@@ -48,28 +48,63 @@ alone does not guarantee macOS permission continuity with a previous binary.
 
 ## Physical vertical swipe coordinates
 
-On macOS 27 and later with natural scrolling enabled, physical vertical swipe
-progress is negated before conversion to internal positions and before choosing
-the ended gesture's target direction. The active operation's resolved scrolling
-mode is used for both decisions, including resumed animations. Horizontal input,
-macOS 26 input, natural-scrolling-off input and synthetic keyboard commands are
-unchanged. The existing output progress/velocity conversion is unchanged.
+The first attempted fix (`01bd121`) negated incoming vertical progress on macOS
+27 with natural scrolling. It passed position-only unit tests but **failed actual
+physical-trackpad acceptance**. Those tests did not inspect generated events or
+the state reached by their emitted signs, so they were insufficient evidence.
 
-A physical reproduction showed an exit gesture from Mission Control's internal
-position +1,000,000 moving to +1,044,158 and +1,329,223, then ending clamped at
-+1,000,000. The normalized numeric regression fixture instead moves to +955,842
-and +670,777, then ends at desktop position 0. No raw diagnostic logs are included
-in source. App Exposé's opposite-sign exit is covered as well.
+Correlating the before/after diagnostic sessions exposed the outgoing mismatch:
 
-The handler tests run the real changed/ended/cancel handlers and animator with
-real axis conversions and limits. An isolated position-only operation replaces
-WindowServer queries and event posting. Coverage includes both entry routes and
-both exits, macOS 26/27 compatibility, natural scrolling on/off, horizontal input,
-macOS 28's existing 27-or-later compatibility rule, canceled gestures, pending
-targets, animation interruption/resume, zero progress and keyboard direction.
-These deterministic tests are not interactive acceptance: real trackpad entry and
-exit in Mission Control/App Exposé still need user verification after a separately
-authorized installation. Implementation/build/test do not install or launch it.
+| Implementation | Raw vertical sign from desktop | Internal target | Next detected state |
+| --- | --- | --- | --- |
+| Before incoming normalization | positive | +1 | -1 (App Exposé) |
+| Before incoming normalization | negative | -1 | +1 (Mission Control) |
+| First attempted fix | positive | -1 | +1 (Mission Control) |
+| First attempted fix | negative | +1 | -1 (App Exposé) |
+
+Positions in this table use whole swipes. Mission Control is +1, desktop is 0,
+and App Exposé is -1. The natural-scrolling adaptation in the outgoing event
+factory was reversing vertical progress and velocity as well as horizontal
+output. Incoming normalization hid the entry symptom while leaving outgoing
+state opposite to the internal target. A subsequent exit from detected Mission
+Control with negative raw progress was inverted upward and clamped at +1.
+
+The second fix removes incoming normalization entirely. In
+`CreateDockControlGestureEvent`, the macOS 27-or-later natural-scrolling sign
+adaptation now applies **only to horizontal events**. Vertical outgoing progress
+and velocity keep canonical +Mission Control / -App Exposé signs, consistent
+with the existing natural-scrolling-off keyboard path. Horizontal output,
+macOS 26 behavior and natural-scrolling-off behavior are unchanged.
+
+Generated-event tests create real CGEvents without posting them and decode
+progress, both velocity fields, phase and axis. They cover both axes, both
+signs and zero, present/absent velocity, all four phases, natural scrolling on/off,
+and forced macOS 26/27/28 compatibility modes. CGEvent fields round through
+single precision, so decoded numeric comparisons use float precision.
+
+Integration tests run the real begin/change/end/cancel handlers, animator,
+segmented operation, event factory and augmentation. Only external state is
+replaced by a vertical adapter subclass and a memory-only sink. The terminal
+state model reads **emitted** ended-event signs, not the handler target. It
+covers both entries and exits, including anonymized raw progress fixtures:
+Mission Control +1 with -0.406433 returns to 0; App Exposé -1 with +0.354965
+returns to 0; desktop +0.333588 enters +1 and -0.540634 enters -1. This model is
+an inference from correlated traces, not a live WindowServer acceptance test.
+No raw logs, display IDs or private diagnostic paths are included in source.
+
+End/cancel handlers accept an owned sink, defaulting to their unchanged
+production posting sink. Tests inject memory-only sinks through completion and
+explicitly commit cleanup before animator destruction. Test-executable-local
+guards replace both macOS posting APIs and fail if unexpectedly selected. A
+regression test exercises both production sink classes against these guards,
+verifying no live input is sent. Position-only tests remain useful for pending
+targets, interruption/resume, zero-progress and keyboard direction, but are no
+longer the sole regression evidence.
+
+These deterministic tests do not establish physical acceptance. Real trackpad
+entry and exit in Mission Control/App Exposé still require user verification
+after a separately authorized installation. This second-fix build is not
+installed or launched by implementation/build/test.
 
 ## Tested local build without installation or launch
 
@@ -149,11 +184,21 @@ copy until the new app has passed real interactive acceptance.
 
 ## Verification and remaining acceptance
 
-The local full application build succeeds. All 6 available Bazel test targets
-were genuinely rerun: the final run passed 45 individual test cases with no
-failures or errors, including 15 physical-handler regression cases. Before the
-coordinate correction, the same handler suite passed 9 cases and failed 6,
-including the numeric Mission Control exit fixture. One earlier rerun exposed an upstream live-state dependency:
+The second-fix local full application build succeeds. All 7 Bazel test targets
+were genuinely rerun: 51 individual test cases passed without failures or errors,
+including 19 handler/guard cases and 2 generated-event cases. Before changing
+production coordinates, the corrected regression run against the first fix's
+incoming/outgoing behavior passed 9 of 17 handler cases and failed 8; the event
+suite passed its horizontal case and failed its vertical case. This red run is
+retained locally alongside the green reports. Two further handler/guard cases
+were added afterward. A separate output-only mutation restored the incorrect
+vertical output flip while retaining corrected input: 3 integration cases and
+the generated vertical-event case failed, while all position-only cases and
+the horizontal-event case passed. Restoring horizontal-only adaptation returned
+the full suite to green. This verifies that integration coverage detects the
+outgoing defect independently of incoming normalization.
+
+One earlier rerun exposed an upstream live-state dependency:
 `AxisAdapterTest.VerticalAxisAdapter_DesktopSpace` expected 0 but observed the
 Mission Control position 1,000,000. Its production method queries the active
 WindowServer state, despite the test supplying a synthetic desktop SpaceState.

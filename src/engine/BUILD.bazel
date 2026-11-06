@@ -138,6 +138,7 @@ cc_test(
     name = "physical-event-handler_test",
     srcs = ["physical-event-handler_test.cc"],
     deps = [
+        "//src:event",
         ":physical-event-handler",
         ":axis-adapter",
         ":const",

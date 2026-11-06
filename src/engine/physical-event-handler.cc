@@ -1,6 +1,5 @@
 #include "src/engine/physical-event-handler.h"
 
-#include "src/compatibility.h"
 #include "src/engine/axis-adapter.h"
 #include "src/engine/const.h"
 #include "src/engine/jump-to-space.h"
@@ -270,18 +269,6 @@ absl::Status PhysicalEventHandler::HandleBeginGesture(
   return absl::OkStatus();
 }
 
-double PhysicalEventHandler::PhysicalProgressToInternal(double progress) const {
-  // On macOS 27 with natural scrolling, physical vertical progress has the
-  // opposite sign to VerticalAxisAdapter's Mission Control (+1) / App Expose
-  // (-1) coordinates. Match the operation's resolved scrolling mode, including
-  // when resuming an animation. Synthetic keyboard commands do not use this.
-  if (current_axis_ == Axis::kVertical && IsMacOS27() &&
-      animator_->operation().options().natural_scrolling_enabled.value()) {
-    return -progress;
-  }
-  return progress;
-}
-
 absl::Status PhysicalEventHandler::HandleChangeGesture(
     const DockControlEvent& swipe_event, CGEventSink* absl_nonnull event_sink) {
   CHECK(event_sink != nullptr);
@@ -293,7 +280,7 @@ absl::Status PhysicalEventHandler::HandleChangeGesture(
   const int64_t new_position =
       initial_position_ +
       animator_->operation().axis_adapter().ProgressToNanoswipes(
-          PhysicalProgressToInternal(swipe_event.progress));
+          swipe_event.progress);
 
   VLOG(1) << "HandleChangeGesture():  progress=" << swipe_event.progress;
   VLOG(1) << "HandleChangeGesture():  new_position=" << new_position;
@@ -318,13 +305,13 @@ absl::Duration CalculateAnimationDuration(
 }  // namespace
 
 absl::Status PhysicalEventHandler::HandleEndGesture(
-    const DockControlEvent& swipe_event) {
+    const DockControlEvent& swipe_event, std::unique_ptr<CGEventSink> event_sink) {
   VLOG(1) << "HandleEndGesture(): BEGIN";
   absl::Cleanup cleanup = [] { VLOG(1) << "HandleEndGesture(): END"; };
 
   RETURN_IF_ERROR(CheckGestureActive());
 
-  const double progress = PhysicalProgressToInternal(swipe_event.progress);
+  const double progress = swipe_event.progress;
   const auto [soft_min, soft_max] = animator_->position_soft_limits();
   target_position_ = std::clamp(((target_position_ / kOneSwipeInNanoswipes) +
                                  (progress > 0 ? 1 : -1)) *
@@ -349,13 +336,13 @@ absl::Status PhysicalEventHandler::HandleEndGesture(
           .easing_function = std::move(easing_function),
           .ticks_per_second = options_.frames_per_second(),
       },
-      std::make_unique<CGEventPostSink>()));
+      std::move(event_sink)));
 
   return absl::OkStatus();
 }
 
 absl::Status PhysicalEventHandler::HandleCancelGesture(
-    const DockControlEvent& swipe_event) {
+    const DockControlEvent& swipe_event, std::unique_ptr<CGEventSink> event_sink) {
   VLOG(1) << "HandleCancelGesture(): BEGIN";
   absl::Cleanup cleanup = [] { VLOG(1) << "HandleCancelGesture(): END"; };
 
@@ -381,7 +368,7 @@ absl::Status PhysicalEventHandler::HandleCancelGesture(
           .easing_function = std::move(easing_function),
           .ticks_per_second = options_.frames_per_second(),
       },
-      std::make_unique<CGEventPostSink>()));
+      std::move(event_sink)));
 
   return absl::OkStatus();
 }

@@ -90,14 +90,17 @@ private:
                                   CGEventSink* absl_nonnull event_sink);
   absl::Status HandleChangeGesture(const DockControlEvent& swipe_event,
                                    CGEventSink* absl_nonnull event_sink);
-  absl::Status HandleEndGesture(const DockControlEvent& swipe_event);
-  absl::Status HandleCancelGesture(const DockControlEvent& swipe_event);
+  // Owned sink keeps asynchronous completion testable without live posting.
+  absl::Status HandleEndGesture(
+      const DockControlEvent& swipe_event,
+      std::unique_ptr<CGEventSink> event_sink = std::make_unique<CGEventPostSink>());
+  absl::Status HandleCancelGesture(
+      const DockControlEvent& swipe_event,
+      std::unique_ptr<CGEventSink> event_sink = std::make_unique<CGEventPostSink>());
 
   absl::Status HandleCommand(const RelativeMoveCommand& command);
   absl::Status HandleCommand(const JumpToSpaceCommand& command);
 
-  // Requires an active gesture; only physical changed/ended progress is mapped.
-  double PhysicalProgressToInternal(double progress) const;
   absl::Status CheckGestureActive();
   absl::Status SetUpForNewGesture(Axis axis,
                                   SpaceSwitchOperation::Options options = {});

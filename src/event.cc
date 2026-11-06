@@ -173,12 +173,14 @@ std::string CFEventToDebugString(CGEventRef event) {
 CFUniquePtr<CGEventRef> CreateDockControlGestureEvent(
     int phase, int direction, double progress, std::optional<double> velocity,
     bool natural_scrolling_enabled) {
-  if (IsMacOS27()) {
-    if (natural_scrolling_enabled) {
-      progress = -progress;
-      if (velocity.has_value()) {
-        *velocity = -*velocity;
-      }
+  // The macOS 27 natural-scrolling adaptation applies to horizontal space
+  // switching only. Vertical output uses canonical +Mission Control / -App
+  // Expose coordinates, including velocity, just like keyboard-driven gestures.
+  if (IsMacOS27() && natural_scrolling_enabled &&
+      direction == kCGGestureMotionHorizontal) {
+    progress = -progress;
+    if (velocity.has_value()) {
+      *velocity = -*velocity;
     }
   }
 
