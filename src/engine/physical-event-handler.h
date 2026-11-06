@@ -31,6 +31,8 @@ public:
                                        CGEventRef absl_nonnull event);
 
 private:
+  friend class PhysicalEventHandlerTest;
+
   struct GestureCommand {
     DockControlEvent event ABSL_REQUIRE_EXPLICIT_INIT;
 
@@ -94,6 +96,8 @@ private:
   absl::Status HandleCommand(const RelativeMoveCommand& command);
   absl::Status HandleCommand(const JumpToSpaceCommand& command);
 
+  // Requires an active gesture; only physical changed/ended progress is mapped.
+  double PhysicalProgressToInternal(double progress) const;
   absl::Status CheckGestureActive();
   absl::Status SetUpForNewGesture(Axis axis,
                                   SpaceSwitchOperation::Options options = {});

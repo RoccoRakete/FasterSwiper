@@ -13,9 +13,10 @@ remain unchanged. Version numbers are unchanged. There is no updater.
 The display-name change retains this fork's bundle identifier and preferences
 domain; it does not migrate settings or replace any installed or working copy.
 
-Only direct numbered-space shortcuts gain a configurable modifier. Physical
-swipes, animation settings and Mission Control shortcut lookup retain upstream
-behavior. The keyboard settings picker offers **Command (⌘)** and
+Direct numbered-space shortcuts gain a configurable modifier. Physical vertical
+swipes also receive the macOS 27 natural-scrolling coordinate correction described
+below. Other physical swipe behavior, animation settings and Mission Control
+shortcut lookup retain upstream behavior. The keyboard settings picker offers **Command (⌘)** and
 **Control (⌃)**. Command is the default. The selected value is stored as field 9
 (`jump_to_space_modifier`) of the existing serialized daemon options. Missing values, including saved
 options predating this field, hydrate to Command. Explicit Control values survive
@@ -44,6 +45,31 @@ alone does not guarantee macOS permission continuity with a previous binary.
 - The modifier picker does not remap the separate Mission Control/arrow
   shortcuts. These continue to use the existing System Settings configuration
   and interception toggle.
+
+## Physical vertical swipe coordinates
+
+On macOS 27 and later with natural scrolling enabled, physical vertical swipe
+progress is negated before conversion to internal positions and before choosing
+the ended gesture's target direction. The active operation's resolved scrolling
+mode is used for both decisions, including resumed animations. Horizontal input,
+macOS 26 input, natural-scrolling-off input and synthetic keyboard commands are
+unchanged. The existing output progress/velocity conversion is unchanged.
+
+A physical reproduction showed an exit gesture from Mission Control's internal
+position +1,000,000 moving to +1,044,158 and +1,329,223, then ending clamped at
++1,000,000. The normalized numeric regression fixture instead moves to +955,842
+and +670,777, then ends at desktop position 0. No raw diagnostic logs are included
+in source. App Exposé's opposite-sign exit is covered as well.
+
+The handler tests run the real changed/ended/cancel handlers and animator with
+real axis conversions and limits. An isolated position-only operation replaces
+WindowServer queries and event posting. Coverage includes both entry routes and
+both exits, macOS 26/27 compatibility, natural scrolling on/off, horizontal input,
+macOS 28's existing 27-or-later compatibility rule, canceled gestures, pending
+targets, animation interruption/resume, zero progress and keyboard direction.
+These deterministic tests are not interactive acceptance: real trackpad entry and
+exit in Mission Control/App Exposé still need user verification after a separately
+authorized installation. Implementation/build/test do not install or launch it.
 
 ## Tested local build without installation or launch
 
@@ -123,9 +149,11 @@ copy until the new app has passed real interactive acceptance.
 
 ## Verification and remaining acceptance
 
-The local full application build succeeds. All 5 available Bazel test targets
-were genuinely rerun: the final run passed 30 individual test cases with no
-failures or errors. One earlier rerun exposed an upstream live-state dependency:
+The local full application build succeeds. All 6 available Bazel test targets
+were genuinely rerun: the final run passed 45 individual test cases with no
+failures or errors, including 15 physical-handler regression cases. Before the
+coordinate correction, the same handler suite passed 9 cases and failed 6,
+including the numeric Mission Control exit fixture. One earlier rerun exposed an upstream live-state dependency:
 `AxisAdapterTest.VerticalAxisAdapter_DesktopSpace` expected 0 but observed the
 Mission Control position 1,000,000. Its production method queries the active
 WindowServer state, despite the test supplying a synthetic desktop SpaceState.
@@ -133,7 +161,7 @@ A subsequent uncached full rerun passed without changing code or controlling
 the desktop. Run these upstream tests while the desktop, rather than Mission
 Control/App Exposé, is active. The failure log is retained only as local build
 evidence and is not included in the published source; no flaky-test suppression
-or production gesture changes were introduced.
+or desktop control was introduced to obtain a passing run.
 
 The new matcher has 6 regression cases covering all ten keys in both
 modes, missing-field defaults, inactive/additional modifiers, key-up and unrelated

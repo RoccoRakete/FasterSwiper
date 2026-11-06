@@ -1,5 +1,6 @@
 #include "src/engine/physical-event-handler.h"
 
+#include "src/compatibility.h"
 #include "src/engine/axis-adapter.h"
 #include "src/engine/const.h"
 #include "src/engine/jump-to-space.h"
@@ -269,6 +270,18 @@ absl::Status PhysicalEventHandler::HandleBeginGesture(
   return absl::OkStatus();
 }
 
+double PhysicalEventHandler::PhysicalProgressToInternal(double progress) const {
+  // On macOS 27 with natural scrolling, physical vertical progress has the
+  // opposite sign to VerticalAxisAdapter's Mission Control (+1) / App Expose
+  // (-1) coordinates. Match the operation's resolved scrolling mode, including
+  // when resuming an animation. Synthetic keyboard commands do not use this.
+  if (current_axis_ == Axis::kVertical && IsMacOS27() &&
+      animator_->operation().options().natural_scrolling_enabled.value()) {
+    return -progress;
+  }
+  return progress;
+}
+
 absl::Status PhysicalEventHandler::HandleChangeGesture(
     const DockControlEvent& swipe_event, CGEventSink* absl_nonnull event_sink) {
   CHECK(event_sink != nullptr);
@@ -280,7 +293,7 @@ absl::Status PhysicalEventHandler::HandleChangeGesture(
   const int64_t new_position =
       initial_position_ +
       animator_->operation().axis_adapter().ProgressToNanoswipes(
-          swipe_event.progress);
+          PhysicalProgressToInternal(swipe_event.progress));
 
   VLOG(1) << "HandleChangeGesture():  progress=" << swipe_event.progress;
   VLOG(1) << "HandleChangeGesture():  new_position=" << new_position;
@@ -311,9 +324,10 @@ absl::Status PhysicalEventHandler::HandleEndGesture(
 
   RETURN_IF_ERROR(CheckGestureActive());
 
+  const double progress = PhysicalProgressToInternal(swipe_event.progress);
   const auto [soft_min, soft_max] = animator_->position_soft_limits();
   target_position_ = std::clamp(((target_position_ / kOneSwipeInNanoswipes) +
-                                 (swipe_event.progress > 0 ? 1 : -1)) *
+                                 (progress > 0 ? 1 : -1)) *
                                     kOneSwipeInNanoswipes,
                                 soft_min, soft_max);
 

@@ -112,6 +112,7 @@ cc_library(
         ":jump-to-space",
         ":space-switch-operation",
         ":swipe-animator",
+        "//src:compatibility",
         "//src:easing",
         "//src:enum-util",
         "//src:event",
@@ -130,6 +131,23 @@ cc_library(
         "@abseil-cpp//absl/status:status_macros",
         "@abseil-cpp//absl/status:statusor",
         "@magic_enum",
+    ],
+)
+
+cc_test(
+    name = "physical-event-handler_test",
+    srcs = ["physical-event-handler_test.cc"],
+    deps = [
+        ":physical-event-handler",
+        ":axis-adapter",
+        ":const",
+        ":space-switch-operation",
+        ":swipe-animator",
+        "//src:cf-util",
+        "//src:compatibility",
+        "//src:space-state",
+        "@abseil-cpp//absl/flags:flag",
+        "@googletest//:gtest_main",
     ],
 )
 
