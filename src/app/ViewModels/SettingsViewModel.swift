@@ -158,9 +158,18 @@ final class SettingsViewModel: SettingsViewModelProtocol {
         }
     }
 
+    var matchScreenRefreshRate: Bool {
+        get { settingsStore.daemonOptions.matchScreenRefreshRate }
+        set {
+            settingsStore.daemonOptions.matchScreenRefreshRate = newValue
+            scheduleRestart()
+        }
+    }
+
     var framesPerSecond: Int {
         get { Int(settingsStore.daemonOptions.framesPerSecond) }
         set {
+            guard newValue > 0 else { return }
             settingsStore.daemonOptions.framesPerSecond = Int64(newValue)
             scheduleRestart()
         }

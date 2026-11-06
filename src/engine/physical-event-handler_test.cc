@@ -154,11 +154,12 @@ protected:
 
   void SetUpHandler(Configuration config, int64_t initial,
                     std::optional<int64_t> target = std::nullopt,
-                    int duration_seconds = 0) {
+                    int duration_seconds = 0, bool match_screen = false) {
     ClearHandler();
     absl::SetFlag(&FLAGS_force_os_version, config.os);
     proto::DaemonOptions options;
     options.set_frames_per_second(120);
+    options.set_match_screen_refresh_rate(match_screen);
     options.mutable_vertical_settings()->set_enabled(true);
     options.mutable_horizontal_settings()->set_enabled(true);
     options.mutable_vertical_settings()->mutable_duration()->set_seconds(
@@ -229,6 +230,16 @@ protected:
     RecordingSink sink(recording_);
     ASSERT_TRUE(handler_->HandleBeginGesture(Event(kGestureBegan, 0), &sink).ok());
   }
+  void SetDisplayProviders(DisplaySelector selector, RefreshRateProvider provider) {
+    handler_->display_selector_ = std::move(selector);
+    handler_->refresh_rate_provider_ = std::move(provider);
+    handler_->space_state_loader_ = [] { return TestSpaceState(); };
+  }
+  int64_t Period() const { return handler_->animator_->animation_period_ns(); }
+  void Jump() {
+    ASSERT_TRUE(handler_->HandleCommand(PhysicalEventHandler::JumpToSpaceCommand{
+        .space_index = 1}).ok());
+  }
   void RecordedChange(double raw) {
     RecordingSink sink(recording_);
     ASSERT_TRUE(handler_->HandleChangeGesture(Event(kGestureChanged, raw), &sink).ok());
@@ -269,6 +280,48 @@ INSTANTIATE_TEST_SUITE_P(
         Configuration{26, true, Axis::kHorizontal},
         Configuration{27, false, Axis::kHorizontal},
         Configuration{27, true, Axis::kHorizontal}));
+
+TEST_F(PhysicalEventHandlerTest, EveryAnimationPathResolvesCurrentDisplayAndTimerRate) {
+  // Exercise the actual end, cancel, arrow, and numbered-space handlers. The
+  // position-only operation and executable-local post guards never send input.
+  for (int path = 0; path != 4; ++path) {
+    SCOPED_TRACE(testing::Message() << "animation path " << path);
+    SetUpHandler({27, true, Axis::kHorizontal}, 250'000, std::nullopt, 60, true);
+    Change(0.1);
+    CGDirectDisplayID selected = 17;
+    double rate = 60;
+    std::vector<CGDirectDisplayID> queries;
+    SetDisplayProviders([&] { return selected; }, [&](CGDirectDisplayID display) {
+      queries.push_back(display); return rate;
+    });
+    const auto animate = [&] {
+      switch (path) {
+        case 0: End(0.25); break;
+        case 1: Cancel(0.25); break;
+        case 2: KeyboardDown(); break;
+        case 3: Jump(); break;
+      }
+    };
+    animate();
+    EXPECT_EQ(Period(), 16'666'666);
+    selected = 99; rate = 360;
+    animate();
+    EXPECT_EQ(Period(), 2'777'777);
+    rate = 0;
+    animate();
+    EXPECT_EQ(Period(), 8'333'333);  // Saved manual 120, never overwritten.
+    EXPECT_EQ(queries, (std::vector<CGDirectDisplayID>{17, 99, 99}));
+  }
+}
+
+TEST_F(PhysicalEventHandlerTest, ManualAnimationDoesNotConsultScreen) {
+  SetUpHandler({27, true, Axis::kVertical}, 250'000, std::nullopt, 60);
+  SetDisplayProviders([]() -> std::optional<CGDirectDisplayID> {
+    ADD_FAILURE(); return std::nullopt;
+  }, [](CGDirectDisplayID) { ADD_FAILURE(); return 60; });
+  End(0.25);
+  EXPECT_EQ(Period(), 8'333'333);
+}
 
 TEST_F(PhysicalEventHandlerTest, MissionControlExitTraceMovesTowardDesktop) {
   SetUpHandler({27, true, Axis::kVertical}, 1'000'000);

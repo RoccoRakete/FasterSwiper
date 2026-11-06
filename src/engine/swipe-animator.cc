@@ -1,6 +1,7 @@
 #include "src/engine/swipe-animator.h"
 
 #include "src/engine/space-switch-operation.h"
+#include "src/engine/refresh-rate.h"
 #include "src/periodic-timer.h"
 
 #include <algorithm>
@@ -65,7 +66,8 @@ absl::Status SwipeAnimator::AnimateToPosition(
     return status;
   }
 
-  const int64_t period_ns = 1'000'000'000 / params.ticks_per_second;
+  const int64_t period_ns = AnimationPeriodNanoseconds(params.ticks_per_second);
+  animation_period_ns_ = period_ns;
 
   auto state = std::make_unique<AnimationState>(AnimationState{
       .start_position = operation_->position(),

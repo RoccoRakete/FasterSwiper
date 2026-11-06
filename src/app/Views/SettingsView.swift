@@ -223,7 +223,11 @@ struct AnimationSettingsView<VM: SettingsViewModelProtocol>: View {
             }
 
             Section("Display & Performance") {
-                LabeledContent("Target framerate") {
+                Picker("Target framerate", selection: $viewModel.matchScreenRefreshRate) {
+                    Text("Manual").tag(false)
+                    Text("Match screen refresh rate").tag(true)
+                }
+                LabeledContent("Manual target") {
                     HStack(spacing: 6) {
                         TextField(
                             "",
@@ -238,6 +242,10 @@ struct AnimationSettingsView<VM: SettingsViewModelProtocol>: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .disabled(viewModel.matchScreenRefreshRate)
+                Text("Uses the cursor display’s nominal rate at each animation start, rounded to whole FPS. If unavailable, uses your saved manual target. ProMotion/variable refresh is not tracked live; this does not synchronize animations to vsync.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

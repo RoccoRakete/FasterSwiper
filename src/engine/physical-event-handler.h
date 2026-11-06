@@ -2,6 +2,7 @@
 
 #include "src/easing.h"
 #include "src/engine/swipe-animator.h"
+#include "src/engine/refresh-rate.h"
 #include "src/event.h"
 #include "src/hotkeys.h"
 #include "src/public/fasterswiper.pb.h"
@@ -74,6 +75,13 @@ private:
 
   const proto::DaemonOptions options_;
   const HotkeyConfigurations hotkey_configs_;
+
+  // Inject only external display queries; all four animation paths use this.
+  DisplaySelector display_selector_ = SelectCursorDisplay;
+  RefreshRateProvider refresh_rate_provider_ = ReadDisplayRefreshRate;
+  std::function<absl::StatusOr<SpaceState>()> space_state_loader_ =
+      LoadSpaceStateForActiveDisplay;
+  int64_t AnimationFrameRate() const;
 
   std::unique_ptr<SwipeAnimator> animator_;
   int64_t initial_position_ = 0;

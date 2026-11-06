@@ -3,6 +3,20 @@ load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 package(default_visibility = ["//visibility:public"])
 
 cc_library(
+    name = "refresh-rate",
+    srcs = ["refresh-rate.cc"],
+    hdrs = ["refresh-rate.h"],
+    linkopts = ["-framework", "CoreVideo", "-framework", "ColorSync"],
+    deps = ["//src:cf-util", "//src:space-state"],
+)
+
+cc_test(
+    name = "refresh-rate_test",
+    srcs = ["refresh-rate_test.cc"],
+    deps = [":refresh-rate", "@googletest//:gtest_main"],
+)
+
+cc_library(
     name = "const",
     hdrs = ["const.h"],
 )
@@ -110,6 +124,7 @@ cc_library(
         ":axis-adapter",
         ":const",
         ":jump-to-space",
+        ":refresh-rate",
         ":space-switch-operation",
         ":swipe-animator",
         "//src:compatibility",
@@ -157,6 +172,7 @@ cc_library(
     srcs = ["swipe-animator.cc"],
     hdrs = ["swipe-animator.h"],
     deps = [
+        ":refresh-rate",
         ":space-switch-operation",
         "//src:easing",
         "//src:periodic-timer",

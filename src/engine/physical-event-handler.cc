@@ -334,7 +334,7 @@ absl::Status PhysicalEventHandler::HandleEndGesture(
           .target_position = target_position_,
           .duration = duration,
           .easing_function = std::move(easing_function),
-          .ticks_per_second = options_.frames_per_second(),
+          .ticks_per_second = AnimationFrameRate(),
       },
       std::move(event_sink)));
 
@@ -366,7 +366,7 @@ absl::Status PhysicalEventHandler::HandleCancelGesture(
           .target_position = initial_position_,
           .duration = duration,
           .easing_function = std::move(easing_function),
-          .ticks_per_second = options_.frames_per_second(),
+          .ticks_per_second = AnimationFrameRate(),
       },
       std::move(event_sink)));
 
@@ -429,7 +429,7 @@ absl::Status PhysicalEventHandler::HandleCommand(
           .target_position = target_position_,
           .duration = duration,
           .easing_function = std::move(easing_function),
-          .ticks_per_second = options_.frames_per_second(),
+          .ticks_per_second = AnimationFrameRate(),
       },
       std::make_unique<CGEventPostSink>()));
 
@@ -447,7 +447,7 @@ absl::Status PhysicalEventHandler::HandleCommand(
   }
 
   ASSIGN_OR_RETURN(const SpaceState space_state,
-                   LoadSpaceStateForActiveDisplay());
+                   space_state_loader_());
   if (command.space_index >= space_state.count()) {
     VLOG(1) << "HandleCommand(): ignoring JumpToSpaceCommand, requested "
                "space_index="
@@ -476,7 +476,7 @@ absl::Status PhysicalEventHandler::HandleCommand(
           .target_position = target_position_,
           .duration = duration,
           .easing_function = std::move(easing_function),
-          .ticks_per_second = options_.frames_per_second(),
+          .ticks_per_second = AnimationFrameRate(),
       },
       std::make_unique<CGEventPostSink>()));
 
@@ -528,7 +528,7 @@ absl::Status PhysicalEventHandler::SetUpForNewGesture(
                   << axis_adapter->debug_name();
         } else {
           ASSIGN_OR_RETURN(SpaceState space_state,
-                           LoadSpaceStateForActiveDisplay());
+                           space_state_loader_());
           VLOG(1) << "SetUpForNewGesture(): space_state=" << space_state
                   << ", active_window=" << magic_enum::enum_name(active_window);
           axis_adapter =
@@ -548,7 +548,7 @@ absl::Status PhysicalEventHandler::SetUpForNewGesture(
       }
       case kVertical: {
         ASSIGN_OR_RETURN(SpaceState space_state,
-                         LoadSpaceStateForActiveDisplay());
+                         space_state_loader_());
         std::unique_ptr<AxisAdapter> axis_adapter =
             std::make_unique<VerticalAxisAdapter>(std::move(space_state));
         ASSIGN_OR_RETURN(operation, SegmentedSpaceSwitchOperation::Create(
@@ -575,6 +575,12 @@ absl::Status PhysicalEventHandler::SetUpForNewGesture(
           << ", target_position_=" << target_position_;
 
   return absl::OkStatus();
+}
+
+int64_t PhysicalEventHandler::AnimationFrameRate() const {
+  return ResolveAnimationFrameRate(options_.frames_per_second(),
+                                   options_.match_screen_refresh_rate(),
+                                   display_selector_, refresh_rate_provider_);
 }
 
 bool PhysicalEventHandler::IsAxisEnabled(Axis axis) const {

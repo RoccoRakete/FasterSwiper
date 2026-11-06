@@ -60,11 +60,44 @@ TEST(FasterSwiperTest, DefaultDaemonOptions) {
             proto::EASING_FUNCTION_QUINTIC_EASE_OUT);
 
   EXPECT_EQ(result.frames_per_second(), 240);
+  EXPECT_TRUE(result.has_match_screen_refresh_rate());
+  EXPECT_FALSE(result.match_screen_refresh_rate());
   EXPECT_TRUE(result.intercept_mission_control_shortcuts());
   EXPECT_TRUE(result.enable_jump_to_space_shortcuts());
   EXPECT_TRUE(result.has_jump_to_space_modifier());
   EXPECT_EQ(result.jump_to_space_modifier(),
             proto::JUMP_TO_SPACE_MODIFIER_COMMAND);
+}
+
+TEST(FasterSwiperTest, MissingRefreshModePreservesOlderManualTarget) {
+  proto::DaemonOptions input;
+  input.set_frames_per_second(73);
+  input.set_enable_jump_to_space_shortcuts(false);
+  const auto result = HydrateAndExtract(input);
+  EXPECT_TRUE(result.has_match_screen_refresh_rate());
+  EXPECT_FALSE(result.match_screen_refresh_rate());
+  EXPECT_EQ(result.frames_per_second(), 73);
+  EXPECT_FALSE(result.enable_jump_to_space_shortcuts());
+}
+
+TEST(FasterSwiperTest, RefreshToggleRoundTripsWithoutChangingManualOrOtherSettings) {
+  for (int64_t manual : {1, 29, 73, 144, 360, 1000}) {
+    proto::DaemonOptions options;
+    options.set_frames_per_second(manual);
+    options.set_jump_to_space_modifier(proto::JUMP_TO_SPACE_MODIFIER_CONTROL);
+    options.set_intercept_mission_control_shortcuts(false);
+    options.mutable_vertical_settings()->set_enabled(false);
+    for (bool automatic : {true, false, true}) {
+      options.set_match_screen_refresh_rate(automatic);
+      options = HydrateAndExtract(options);
+      EXPECT_EQ(options.match_screen_refresh_rate(), automatic);
+      EXPECT_EQ(options.frames_per_second(), manual);
+      EXPECT_EQ(options.jump_to_space_modifier(), proto::JUMP_TO_SPACE_MODIFIER_CONTROL);
+      EXPECT_FALSE(options.intercept_mission_control_shortcuts());
+      EXPECT_FALSE(options.vertical_settings().enabled());
+      EXPECT_EQ(HydrateAndExtract(options).SerializeAsString(), options.SerializeAsString());
+    }
+  }
 }
 
 TEST(FasterSwiperTest, MissingModifierHydratesToCommand) {

@@ -50,4 +50,5 @@ rm -rf "artifacts/$app"
 cp -f "$archive" artifacts/FasterSwiper-source.zip
 shasum -a 256 artifacts/FasterSwiper-source.zip \
     "artifacts/$app/Contents/MacOS/FasterSwiper" > artifacts/SHA256SUMS
-printf '\nBuilt, tested, not launched: %s/artifacts/%s\n' "$PWD" "$app"
+python3 tools/verify-app-package.py > artifacts/icon-packaging-check.log
+printf '\nBuilt, tested, package verified, not launched: %s/artifacts/%s\n' "$PWD" "$app"

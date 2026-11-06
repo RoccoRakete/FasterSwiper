@@ -36,6 +36,7 @@ public final class MockSettingsViewModel: SettingsViewModelProtocol {
         ]
     }
     public var framesPerSecond: Int = 240
+    public var matchScreenRefreshRate: Bool = false
     public var interceptMissionControlShortcuts: Bool = true
     public var enableJumpToSpaceShortcuts: Bool = true
     public var jumpToSpaceModifierTag: Int = 0

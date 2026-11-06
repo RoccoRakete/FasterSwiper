@@ -29,6 +29,9 @@ public:
 
   bool is_committed() const;
 
+  // Last configured timer period; read on the handler thread, not the callback.
+  int64_t animation_period_ns() const { return animation_period_ns_; }
+
   // Cancel any active animation and instantly sets the position.
   absl::Status SetPosition(int64_t new_position,
                            CGEventSink* absl_nonnull event_sink);
@@ -67,6 +70,7 @@ public:
 private:
   const std::unique_ptr<SpaceSwitchOperation> operation_;
   std::unique_ptr<PeriodicTimer> timer_;
+  int64_t animation_period_ns_ = 0;
   std::shared_future<AnimatedSpaceSwitchOperationResult> pending_future_;
   std::unique_ptr<CGEventSink> active_event_sink_;
 

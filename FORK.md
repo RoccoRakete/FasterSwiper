@@ -15,7 +15,7 @@ domain; it does not migrate settings or replace any installed or working copy.
 
 Direct numbered-space shortcuts gain a configurable modifier. Outgoing vertical
 gestures also receive the macOS 27 natural-scrolling coordinate correction described
-below. Other physical swipe behavior, animation settings and Mission Control
+below. Other physical swipe behavior, duration/easing settings and Mission Control
 shortcut lookup retain upstream behavior. The keyboard settings picker offers **Command (⌘)** and
 **Control (⌃)**. Command is the default. The selected value is stored as field 9
 (`jump_to_space_modifier`) of the existing serialized daemon options. Missing values, including saved
@@ -181,6 +181,134 @@ quarantine, Gatekeeper, TCC or library-validation settings are modified. Any
 manual first launch and permission checks remain a separate acceptance step.
 Do not run the original and fork together. Keep the original and prior working
 copy until the new app has passed real interactive acceptance.
+
+## Bundled app icon
+
+The fork's original artwork is a blue rounded-square background, overlapping
+windows and a white swipe arrow. No external images, fonts or SF Symbols were
+used to make it. The menu-bar SF Symbol is unchanged. The app name, technical
+bundle identifier and deployment target are unchanged.
+
+Regenerate the checked-in artwork with Apple's SDK and Swift, without installing
+packages or opening an app:
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  CLANG_MODULE_CACHE_PATH="$PWD/.local/icon-module-cache" \
+  xcrun swift tools/generate-app-icon.swift
+```
+
+This creates ten PNG assets (16 through 1024 pixels) and `Contents.json` in
+`src/app/Assets.xcassets/AppIcon.appiconset`, plus the native
+`src/app/AppIcon.icon` source. Regeneration was checked byte-for-byte on the
+local SDK. The source PNG catalog is retained for reference/editing; the build
+uses the native `.icon` bundle through `macos_application.app_icons`.
+
+The pinned rules_apple rejects legacy `.appiconset` inputs for deployment targets
+26.0 or newer (`apple/internal/resource_actions/actool.bzl`,
+`_validate_standard_app_icon_sets`). It was inspected and the real failure was
+confirmed before switching to the native format, rather than changing the
+minimum OS version or patching a cached dependency. The app_icons API is in
+`apple/internal/rule_attrs.bzl`, `_app_icon_attrs`. Apple's
+[Icon Composer documentation](https://developer.apple.com/documentation/xcode/creating-your-app-icon-using-icon-composer)
+describes native icon sources and generated size/appearance variants.
+
+The successful app build contains `CFBundleIconFile=AppIcon`,
+`CFBundleIconName=AppIcon`, `Contents/Resources/AppIcon.icns` and `Assets.car`.
+Xcode's native pipeline emits 16/32/128/256-pixel compatibility ICNS images;
+`Assets.car` contains the complete multi-size icon (16/32/64/128/256/512/1024)
+and 1024-pixel native layers. `tools/verify-app-package.py` verifies the actual
+exported app and ZIP match, identity, license resources, ICNS header/chunks,
+real `iconutil` decode, PNG CRC/decompression and `sips` dimensions, and
+`assetutil --info` catalog renditions. The build helper runs this automatically.
+It does not launch the app or mutate Finder's icon cache. Finder display after
+installation remains a human acceptance check.
+
+## Frame-rate selection
+
+Animation settings offer **Manual** and **Match screen refresh rate**. Manual
+remains the default, including for existing preferences. Field 10
+(`match_screen_refresh_rate`) is an explicitly present boolean, hydrated to
+false when absent. Field 4 (`frames_per_second`) remains the retained manual
+target/fallback; toggling matching never replaces it. The Swift protobuf property
+is generated from this schema and used by the actual settings view model through
+the existing serialized SettingsStore save and debounced restart path. The manual
+field is disabled while matching is active. The settings caption explains the
+fallback and ProMotion limitation; no misleading live/effective-rate readout is
+shown.
+
+The engine resolves a rate at **each** end-gesture, cancel-gesture, relative
+keyboard move and numbered-space jump animation start. It uses the same managed
+display-under-cursor selection as space-state, converts its UUID to the Core
+Graphics display ID, and queries that display, not the main display. A display
+or mode change between animations is therefore re-read. These C/C++ queries do
+not use NSScreen/AppKit, synchronize with the main thread, or add an observer,
+helper service or continuous display-link loop.
+
+A finite positive `CGDisplayModeGetRefreshRate(CGDisplayCopyDisplayMode(id))`
+result wins. If unavailable, a short-lived `CVDisplayLinkCreateWithCGDisplay`
+instance is queried with `CVDisplayLinkGetNominalOutputVideoRefreshPeriod` and
+released; it is **never started**, and no callback is registered. CoreVideo's
+legacy display-link API is deprecated from macOS 15. The fallback deliberately
+uses it only to obtain a nominal period without a GUI-thread dispatch or running
+display-link service. Invalid, indefinite or nonpositive periods, invalid rates
+and display lookup failures fall back to the saved manual rate. Invalid manual
+values use 240 for execution without rewriting stored data. All positive manual
+values are preserved, including values below 30 or above 240. Automatic rates
+such as 360 are not capped at 240. The integer animator API rounds fractional
+rates (59.94 becomes 60); only its 1-nanosecond timer resolution limits the
+resolved rate/period, avoiding zero periods, division by zero and integer
+conversion overflow.
+
+This is a nominal animation-timer target, **not** live ProMotion/VRR tracking,
+maximum-panel-rate detection, guaranteed frame delivery or vsync alignment. In
+particular, it does not promise 120 FPS on every ProMotion mode. A successful
+build and deterministic tests are not evidence of physical display timing.
+
+Primary API references checked against Apple documentation and the local SDK:
+
+- [CGDisplayMode.refreshRate / CGDisplayModeGetRefreshRate](https://developer.apple.com/documentation/coregraphics/cgdisplaymode/refreshrate),
+  `CoreGraphics.framework/Headers/CGDirectDisplay.h`: the rate of the selected mode.
+- [CVDisplayLinkGetNominalOutputVideoRefreshPeriod](https://developer.apple.com/documentation/corevideo/cvdisplaylinkgetnominaloutputvideorefreshperiod(_:)),
+  `CoreVideo.framework/Headers/CVDisplayLink.h`: the ideal/nominal period, which
+  may be indefinite; distinct from the measured actual-period API.
+- [CVDisplayLinkCreateWithCGDisplay](https://developer.apple.com/documentation/corevideo/cvdisplaylinkcreatewithcgdisplay(_:_:)),
+  `CVDisplayLink.h`: creates for the specified display. The same header marks
+  the API family deprecated from macOS 15 and declares Start separately.
+- `CoreVideo.framework/Headers/CVBase.h`: `CVTime` has a signed 64-bit timeValue,
+  signed 32-bit timeScale and `kCVTimeIsIndefinite` flag.
+- `ColorSync.framework/Headers/ColorSyncDevice.h`: declares
+  `CGDisplayGetDisplayIDFromUUID` and its inverse used by space-state.
+
+Headers are under
+`/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/`.
+Retrieved Apple documentation JSON is retained only in ignored local build evidence.
+
+## Icon / refresh-rate verification
+
+All 8 test targets were rerun uncached: **59 cases pass** (the prior 51 plus
+8 new cases). New tests cover old-preference migration to manual, repeated
+serialization/hydration while toggling modes, preservation of manual and other
+settings, screen IDs 17/99 and changing providers, fractional/360-Hz rates,
+invalid/missing display/rate fallbacks, and safe periods for extreme inputs.
+The real four handler paths are exercised against a no-post operation and the
+existing executable-local guards, checking the actual configured animator timer
+period at 60 Hz, 360 Hz and manual fallback. The existing emitted-event vertical
+regressions and shortcut tests remain intact. A mutation reverting all four
+call sites to the manual target failed the new integration test on **every**
+path; restoration returned the full suite to green. Reports are in ignored
+`artifacts/test-results`, with the uncached run and negative mutation logs nearby.
+The actual SwiftUI view/model and generated Swift proto bridge compile in the
+full app build. No test reads or writes the installed app's preferences, launches
+the app, or posts live input.
+
+Before rebuilding, the accepted exported app/ZIP/reports were preserved in
+ignored `artifacts/rollback-pre-icon-refresh/`. The new app and ZIP remain under
+`artifacts/`; no installation, launch, stop, login-item, permission, signing,
+commit or push operation is part of this change. The existing linker-only
+signature limitation above remains. Human acceptance must still verify Finder's
+icon and settings persistence across an actual authorized relaunch, automatic
+matching across physical displays/modes, and gesture behavior.
 
 ## Verification and remaining acceptance
 

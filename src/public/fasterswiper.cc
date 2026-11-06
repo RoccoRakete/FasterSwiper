@@ -53,6 +53,7 @@ proto::DaemonOptions GetDefaultDaemonOptions() {
   vertical->set_easing_function(proto::EASING_FUNCTION_QUINTIC_EASE_OUT);
 
   options.set_frames_per_second(240);
+  options.set_match_screen_refresh_rate(false);
   options.set_intercept_mission_control_shortcuts(true);
   options.set_enable_jump_to_space_shortcuts(true);
   options.set_jump_to_space_modifier(proto::JUMP_TO_SPACE_MODIFIER_COMMAND);
@@ -184,6 +185,10 @@ bool FS_HydrateDaemonOptions(FS_DaemonOptions* daemon_options) {
   }
   if (!vertical->has_easing_function()) {
     vertical->set_easing_function(proto::EASING_FUNCTION_QUINTIC_EASE_OUT);
+  }
+
+  if (!daemon_options->options.has_match_screen_refresh_rate()) {
+    daemon_options->options.set_match_screen_refresh_rate(false);
   }
 
   if (!daemon_options->options.has_frames_per_second()) {

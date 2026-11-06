@@ -7,6 +7,14 @@ for the pinned upstream commit, exact behavior, local build instructions, test
 results and the signing/permissions boundary. Upstream license and attribution
 are preserved.
 
+The fork includes original bundled app artwork and **Animation → Display &
+Performance → Match screen refresh rate**. Manual mode remains the default and
+its saved target is retained when automatic matching is selected. Matching uses
+the cursor display's nominal rate at each animation start, not instantaneous
+ProMotion/VRR tracking or vsync synchronization. An unavailable rate falls back
+to the retained manual target. See [FORK.md](FORK.md#frame-rate-selection) for the
+API, fallback, and testing details.
+
 A small utility for macOS that allows one to customize the type and speed of
 swiping animations when moving between spaces.
 

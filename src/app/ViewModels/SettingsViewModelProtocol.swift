@@ -64,6 +64,7 @@ public protocol SettingsViewModelProtocol: AnyObject, Observable {
 
     var easingFunctionOptions: [PickerOption] { get }
     var framesPerSecond: Int { get set }
+    var matchScreenRefreshRate: Bool { get set }
     var interceptMissionControlShortcuts: Bool { get set }
     var enableJumpToSpaceShortcuts: Bool { get set }
     // Matches the persisted JumpToSpaceModifier proto enum: Command = 0, Control = 1.
