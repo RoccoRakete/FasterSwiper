@@ -5,15 +5,15 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>FasterSwiper Command</string>
+    <string>FasterSwiper</string>
     <key>CFBundleIdentifier</key>
     <string>com.martin.FasterSwiper.Command</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>FasterSwiper Command</string>
+    <string>FasterSwiper</string>
     <key>CFBundleDisplayName</key>
-    <string>FasterSwiper Command</string>
+    <string>FasterSwiper</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>

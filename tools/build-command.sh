@@ -42,12 +42,12 @@ archive=bazel-bin/src/app/FasterSwiper_app.zip
 stage=$(mktemp -d "$PWD/.local/export.XXXXXXXX")
 trap 'rm -rf "$stage"' EXIT
 /usr/bin/ditto -x -k "$archive" "$stage"
-app='FasterSwiper Command.app'
-[[ -x "$stage/$app/Contents/MacOS/FasterSwiper Command" ]]
+app='FasterSwiper.app'
+[[ -x "$stage/$app/Contents/MacOS/FasterSwiper" ]]
 rm -rf "artifacts/$app"
 /usr/bin/ditto "$stage/$app" "artifacts/$app"
 # Bazel outputs are read-only; -f replaces an earlier exported ZIP safely.
-cp -f "$archive" artifacts/FasterSwiper-Command-source.zip
-shasum -a 256 artifacts/FasterSwiper-Command-source.zip \
-    "artifacts/$app/Contents/MacOS/FasterSwiper Command" > artifacts/SHA256SUMS
+cp -f "$archive" artifacts/FasterSwiper-source.zip
+shasum -a 256 artifacts/FasterSwiper-source.zip \
+    "artifacts/$app/Contents/MacOS/FasterSwiper" > artifacts/SHA256SUMS
 printf '\nBuilt, tested, not launched: %s/artifacts/%s\n' "$PWD" "$app"

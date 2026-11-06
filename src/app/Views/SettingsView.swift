@@ -69,7 +69,7 @@ struct GeneralSettingsView<VM: SettingsViewModelProtocol>: View {
                     Button("Toggle") {
                         viewModel.toggleDaemon()
                     }
-                    Button("Quit FasterSwiper Command", role: .destructive) {
+                    Button("Quit FasterSwiper", role: .destructive) {
                         viewModel.quitApplication()
                     }
                 }
@@ -80,7 +80,7 @@ struct GeneralSettingsView<VM: SettingsViewModelProtocol>: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Hide menu bar icon", isOn: $viewModel.hideMenuBarIcon)
                     if viewModel.hideMenuBarIcon {
-                        Text("Open FasterSwiper Command.app to get back to this window.")
+                        Text("Open FasterSwiper.app to get back to this window.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .padding(.trailing, 48)
@@ -103,7 +103,7 @@ struct AnimationSettingsView<VM: SettingsViewModelProtocol>: View {
                     Toggle("Enabled", isOn: $viewModel.horizontalEnabled)
                     Text(
                         viewModel.horizontalEnabled
-                            ? "Horizontal gestures will be handled by FasterSwiper Command."
+                            ? "Horizontal gestures will be handled by FasterSwiper."
                             : "Horizontal gestures will be handled by macOS."
                     )
                     .font(.callout)
@@ -165,7 +165,7 @@ struct AnimationSettingsView<VM: SettingsViewModelProtocol>: View {
                     Toggle("Enabled", isOn: $viewModel.verticalEnabled)
                     Text(
                         viewModel.verticalEnabled
-                            ? "Vertical gestures will be handled by FasterSwiper Command."
+                            ? "Vertical gestures will be handled by FasterSwiper."
                             : "Vertical gestures will be handled by macOS."
                     )
                     .font(.callout)
@@ -311,7 +311,7 @@ struct AboutSettingsView<VM: SettingsViewModelProtocol>: View {
                         .resizable()
                         .frame(width: 96, height: 96)
 
-                        Text("FasterSwiper Command")
+                        Text("FasterSwiper")
                             .font(.title2.weight(.bold))
 
                         Text(viewModel.versionText)

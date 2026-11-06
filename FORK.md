@@ -1,4 +1,4 @@
-# FasterSwiper Command fork
+# FasterSwiper fork
 
 ## Provenance and scope
 
@@ -7,9 +7,11 @@ This fork is based on `mgbowen/FasterSwiper` commit
 `LICENSE` and `ATTRIBUTION.md` are preserved and included as app resources.
 The fork repository is `RoccoRakete/FasterSwiper`.
 
-The app is named **FasterSwiper Command**, with bundle identifier
+The app is named **FasterSwiper**, with bundle identifier
 `com.martin.FasterSwiper.Command`. Internal library, module and Bazel target names
 remain unchanged. Version numbers are unchanged. There is no updater.
+The display-name change retains this fork's bundle identifier and preferences
+domain; it does not migrate settings or replace any installed or working copy.
 
 Only direct numbered-space shortcuts gain a configurable modifier. Physical
 swipes, animation settings and Mission Control shortcut lookup retain upstream
@@ -78,8 +80,8 @@ compiling unrelated developer tools under `src/tools`.
 
 Outputs, all ignored by Git:
 
-- `artifacts/FasterSwiper Command.app`
-- `artifacts/FasterSwiper-Command-source.zip`
+- `artifacts/FasterSwiper.app`
+- `artifacts/FasterSwiper-source.zip`
 - `artifacts/SHA256SUMS` (ZIP and executable checksums)
 - Preserved XML and text test reports and case counts in `artifacts/test-results/`
 

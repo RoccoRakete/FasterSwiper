@@ -1,4 +1,4 @@
-# FasterSwiper Command
+# FasterSwiper
 
 A source fork of [mgbowen/FasterSwiper](https://github.com/mgbowen/FasterSwiper)
 with its own app identity and a configurable numbered-space shortcut modifier:
@@ -62,7 +62,7 @@ Untested.
 ### Are any special permissions required to run this?
 
 The fork still requires macOS permissions. Use the permission controls macOS
-presents for `FasterSwiper Command.app` (Accessibility, or Device Control/Data
+presents for `FasterSwiper.app` (Accessibility, or Device Control/Data
 Access on supported macOS versions). A source build and matching bundle ID do
 not guarantee that permissions from an earlier build carry over. This local
 build does not grant permissions or bypass platform security; see [FORK.md](FORK.md).
@@ -94,7 +94,8 @@ installing, signing the app bundle or launching it:
 
 The script bootstraps a checksum-pinned Bazel locally, uses a project-local
 cache, and sets `DEVELOPER_DIR` without changing `xcode-select`. It exports
-`artifacts/FasterSwiper Command.app` and a ZIP. Apple Silicon's linker emits an
+`artifacts/FasterSwiper.app` and `artifacts/FasterSwiper-source.zip`.
+Apple Silicon's linker emits an
 ad-hoc signature; there is no Developer ID signing or notarization. See
 [FORK.md](FORK.md) for exact commands and remaining manual acceptance checks.
 
