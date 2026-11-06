@@ -2,6 +2,8 @@
 /compile_commands.json
 /xcodeproj.xcodeproj/
 /.build/
+/.local/
+/artifacts/
 
 .DS_Store
 

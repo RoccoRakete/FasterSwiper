@@ -2,6 +2,7 @@
 
 #include "src/engine/axis-adapter.h"
 #include "src/engine/const.h"
+#include "src/engine/jump-to-space.h"
 #include "src/engine/space-switch-operation.h"
 #include "src/enum-util.h"
 #include "src/event.h"
@@ -662,36 +663,7 @@ PhysicalEventHandler::TryGetRelativeMoveCommandFromKeyEvent(
 
 std::optional<PhysicalEventHandler::JumpToSpaceCommand>
 PhysicalEventHandler::TryGetJumpToSpaceCommand(const KeyEvent& event) const {
-  if ((event.modifiers & kModifierKeyMask) != kCGEventFlagMaskControl) {
-    return std::nullopt;
-  }
-
-  auto space_index = [&]() -> std::optional<int64_t> {
-    switch (event.key_code) {
-      case 18:
-        return 0;
-      case 19:
-        return 1;
-      case 20:
-        return 2;
-      case 21:
-        return 3;
-      case 23:
-        return 4;
-      case 22:
-        return 5;
-      case 26:
-        return 6;
-      case 28:
-        return 7;
-      case 25:
-        return 8;
-      case 29:
-        return 9;
-      default:
-        return std::nullopt;
-    }
-  }();
+  const auto space_index = JumpToSpaceIndex(event, options_);
 
   if (!space_index.has_value()) {
     return std::nullopt;

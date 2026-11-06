@@ -3,6 +3,7 @@ import FasterSwiper_Proto
 import Foundation
 
 public typealias DaemonOptions = Fasterswiper_Proto_DaemonOptions
+public typealias JumpToSpaceModifier = Fasterswiper_Proto_JumpToSpaceModifier
 
 enum DaemonOptionsError: Error {
     case loadFailed

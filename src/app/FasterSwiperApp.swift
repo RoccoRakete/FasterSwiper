@@ -77,11 +77,11 @@ struct FasterSwiperApp: App {
         @Bindable var settingsStore = settingsStore
 
         MenuBarExtra(
-            "FasterSwiper",
+            "FasterSwiper Command",
             systemImage: "appwindow.swipe.rectangle",
             isInserted: !$settingsStore.hideMenuBarIcon
         ) {
-            Button("About FasterSwiper", systemImage: "info.circle") {
+            Button("About FasterSwiper Command", systemImage: "info.circle") {
                 openAbout()
             }
 
@@ -110,7 +110,7 @@ struct FasterSwiperApp: App {
                 openSettings()
             }
 
-            Button("Quit FasterSwiper", systemImage: "xmark.rectangle") {
+            Button("Quit FasterSwiper Command", systemImage: "xmark.rectangle") {
                 NSApplication.shared.terminate(nil)
             }
         }

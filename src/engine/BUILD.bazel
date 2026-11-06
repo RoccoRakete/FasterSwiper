@@ -81,12 +81,35 @@ cc_library(
 )
 
 cc_library(
+    name = "jump-to-space",
+    hdrs = ["jump-to-space.h"],
+    deps = [
+        "//src:event",
+        "//src:hotkeys",
+        "//src/public:fasterswiper_cc_proto",
+    ],
+)
+
+cc_test(
+    name = "jump-to-space_test",
+    srcs = ["jump-to-space_test.cc"],
+    deps = [
+        ":jump-to-space",
+        "//src:event",
+        "//src:hotkeys",
+        "//src/public:fasterswiper_cc_proto",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "physical-event-handler",
     srcs = ["physical-event-handler.cc"],
     hdrs = ["physical-event-handler.h"],
     deps = [
         ":axis-adapter",
         ":const",
+        ":jump-to-space",
         ":space-switch-operation",
         ":swipe-animator",
         "//src:easing",

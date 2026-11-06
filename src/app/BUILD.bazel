@@ -32,10 +32,14 @@ swift_library(
 
 macos_application(
     name = "FasterSwiper_app",
-    bundle_id = "com.mgbowen.FasterSwiper",
-    bundle_name = "FasterSwiper",
+    bundle_id = "com.martin.FasterSwiper.Command",
+    bundle_name = "FasterSwiper Command",
+    # Do not run bundle codesigning. Apple Silicon's linker may still emit an
+    # ad-hoc Mach-O signature; this is not a Developer ID or notarized build.
+    features = ["disable_legacy_signing"],
     infoplists = ["Info.plist"],
     minimum_os_version = "26.0",
+    resources = ["//:LICENSE", "//:ATTRIBUTION.md"],
     deps = [
         ":FasterSwiper_lib",
         "@abseil-cpp//absl/log:flags",

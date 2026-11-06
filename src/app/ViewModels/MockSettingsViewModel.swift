@@ -38,6 +38,7 @@ public final class MockSettingsViewModel: SettingsViewModelProtocol {
     public var framesPerSecond: Int = 240
     public var interceptMissionControlShortcuts: Bool = true
     public var enableJumpToSpaceShortcuts: Bool = true
+    public var jumpToSpaceModifierTag: Int = 0
 
     public var launchAtLogin: Bool = true
     public var hideMenuBarIcon: Bool = true

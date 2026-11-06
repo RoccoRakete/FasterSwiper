@@ -69,7 +69,7 @@ struct GeneralSettingsView<VM: SettingsViewModelProtocol>: View {
                     Button("Toggle") {
                         viewModel.toggleDaemon()
                     }
-                    Button("Quit FasterSwiper", role: .destructive) {
+                    Button("Quit FasterSwiper Command", role: .destructive) {
                         viewModel.quitApplication()
                     }
                 }
@@ -80,7 +80,7 @@ struct GeneralSettingsView<VM: SettingsViewModelProtocol>: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Toggle("Hide menu bar icon", isOn: $viewModel.hideMenuBarIcon)
                     if viewModel.hideMenuBarIcon {
-                        Text("Open FasterSwiper.app to get back to this window.")
+                        Text("Open FasterSwiper Command.app to get back to this window.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                             .padding(.trailing, 48)
@@ -103,7 +103,7 @@ struct AnimationSettingsView<VM: SettingsViewModelProtocol>: View {
                     Toggle("Enabled", isOn: $viewModel.horizontalEnabled)
                     Text(
                         viewModel.horizontalEnabled
-                            ? "Horizontal gestures will be handled by FasterSwiper."
+                            ? "Horizontal gestures will be handled by FasterSwiper Command."
                             : "Horizontal gestures will be handled by macOS."
                     )
                     .font(.callout)
@@ -165,7 +165,7 @@ struct AnimationSettingsView<VM: SettingsViewModelProtocol>: View {
                     Toggle("Enabled", isOn: $viewModel.verticalEnabled)
                     Text(
                         viewModel.verticalEnabled
-                            ? "Vertical gestures will be handled by FasterSwiper."
+                            ? "Vertical gestures will be handled by FasterSwiper Command."
                             : "Vertical gestures will be handled by macOS."
                     )
                     .font(.callout)
@@ -276,8 +276,14 @@ struct KeyboardSettingsView<VM: SettingsViewModelProtocol>: View {
                     )
                     .disabled(!viewModel.horizontalEnabled)
 
+                    Picker("Shortcut modifier", selection: $viewModel.jumpToSpaceModifierTag) {
+                        Text("Command (⌘)").tag(0)
+                        Text("Control (⌃)").tag(1)
+                    }
+                    .disabled(!viewModel.horizontalEnabled || !viewModel.enableJumpToSpaceShortcuts)
+
                     Text(
-                        "Press ⌃+1 through ⌃+0 to switch directly to spaces 1 through 10, respectively. Horizontal animations must be enabled to use jump-to-space shortcuts."
+                        "Press \(viewModel.jumpToSpaceModifierTag == 1 ? "⌃" : "⌘")+1 through \(viewModel.jumpToSpaceModifierTag == 1 ? "⌃" : "⌘")+0 to switch directly to spaces 1 through 10, respectively. Horizontal animations must be enabled to use jump-to-space shortcuts. When Command is selected and jump-to-space shortcuts are enabled, Command-number shortcuts take precedence over app shortcuts, such as switching browser tabs. Select Control or disable jump-to-space shortcuts to keep those Command-number app shortcuts."
                     )
                     .font(.callout)
                     .foregroundStyle(.secondary)
@@ -305,7 +311,7 @@ struct AboutSettingsView<VM: SettingsViewModelProtocol>: View {
                         .resizable()
                         .frame(width: 96, height: 96)
 
-                        Text("FasterSwiper")
+                        Text("FasterSwiper Command")
                             .font(.title2.weight(.bold))
 
                         Text(viewModel.versionText)
@@ -320,7 +326,7 @@ struct AboutSettingsView<VM: SettingsViewModelProtocol>: View {
             Section {
                 Link(
                     destination: URL(
-                        string: "https://github.com/mgbowen/FasterSwiper/blob/main/ATTRIBUTION.md"
+                        string: "https://github.com/RoccoRakete/FasterSwiper/blob/main/ATTRIBUTION.md"
                     )!
                 ) {
                     HStack {

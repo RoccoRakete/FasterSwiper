@@ -66,6 +66,8 @@ public protocol SettingsViewModelProtocol: AnyObject, Observable {
     var framesPerSecond: Int { get set }
     var interceptMissionControlShortcuts: Bool { get set }
     var enableJumpToSpaceShortcuts: Bool { get set }
+    // Matches the persisted JumpToSpaceModifier proto enum: Command = 0, Control = 1.
+    var jumpToSpaceModifierTag: Int { get set }
 
     var launchAtLogin: Bool { get set }
     var hideMenuBarIcon: Bool { get set }

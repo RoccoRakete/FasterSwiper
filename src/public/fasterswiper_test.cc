@@ -62,6 +62,40 @@ TEST(FasterSwiperTest, DefaultDaemonOptions) {
   EXPECT_EQ(result.frames_per_second(), 240);
   EXPECT_TRUE(result.intercept_mission_control_shortcuts());
   EXPECT_TRUE(result.enable_jump_to_space_shortcuts());
+  EXPECT_TRUE(result.has_jump_to_space_modifier());
+  EXPECT_EQ(result.jump_to_space_modifier(),
+            proto::JUMP_TO_SPACE_MODIFIER_COMMAND);
+}
+
+TEST(FasterSwiperTest, MissingModifierHydratesToCommand) {
+  proto::DaemonOptions input;
+  input.set_frames_per_second(120);
+  input.set_enable_jump_to_space_shortcuts(false);
+  auto output = HydrateAndExtract(input);
+  EXPECT_TRUE(output.has_jump_to_space_modifier());
+  EXPECT_EQ(output.jump_to_space_modifier(),
+            proto::JUMP_TO_SPACE_MODIFIER_COMMAND);
+  EXPECT_EQ(output.frames_per_second(), 120);
+  EXPECT_FALSE(output.enable_jump_to_space_shortcuts());
+}
+
+TEST(FasterSwiperTest, ModifierSelectionSurvivesHydrationAndSerialization) {
+  for (auto modifier : {proto::JUMP_TO_SPACE_MODIFIER_COMMAND,
+                        proto::JUMP_TO_SPACE_MODIFIER_CONTROL}) {
+    proto::DaemonOptions input;
+    input.set_jump_to_space_modifier(modifier);
+    input.mutable_horizontal_settings()->set_enabled(false);
+    input.mutable_vertical_settings()->set_enabled(false);
+    input.set_intercept_mission_control_shortcuts(false);
+    auto output = HydrateAndExtract(input);
+    EXPECT_TRUE(output.has_jump_to_space_modifier());
+    EXPECT_EQ(output.jump_to_space_modifier(), modifier);
+    EXPECT_FALSE(output.horizontal_settings().enabled());
+    EXPECT_FALSE(output.vertical_settings().enabled());
+    EXPECT_FALSE(output.intercept_mission_control_shortcuts());
+    EXPECT_EQ(HydrateAndExtract(output).SerializeAsString(),
+              output.SerializeAsString());
+  }
 }
 
 TEST(FasterSwiperTest, MigrateLegacyDefaultsNotCopied) {

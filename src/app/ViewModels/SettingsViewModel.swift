@@ -183,6 +183,15 @@ final class SettingsViewModel: SettingsViewModelProtocol {
         }
     }
 
+    var jumpToSpaceModifierTag: Int {
+        get { settingsStore.daemonOptions.jumpToSpaceModifier.rawValue }
+        set {
+            guard let modifier = JumpToSpaceModifier(rawValue: newValue) else { return }
+            settingsStore.daemonOptions.jumpToSpaceModifier = modifier
+            scheduleRestart()
+        }
+    }
+
     var launchAtLogin: Bool {
         get { self.cachedLaunchAtLogin }
         set {

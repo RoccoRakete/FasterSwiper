@@ -1,4 +1,11 @@
-# FasterSwiper
+# FasterSwiper Command
+
+A source fork of [mgbowen/FasterSwiper](https://github.com/mgbowen/FasterSwiper)
+with its own app identity and a configurable numbered-space shortcut modifier:
+**Command by default, Control selectable in Keyboard settings**. See [FORK.md](FORK.md)
+for the pinned upstream commit, exact behavior, local build instructions, test
+results and the signing/permissions boundary. Upstream license and attribution
+are preserved.
 
 A small utility for macOS that allows one to customize the type and speed of
 swiping animations when moving between spaces.
@@ -18,7 +25,10 @@ https://github.com/user-attachments/assets/b55382af-fc5b-4c53-bd92-e321b3a22b64
 
 ### Jump to spaces
 
-You can also jump directly to specific spaces using Control+\<space number\>.
+You can also jump directly to specific spaces using Command+\<space number\>.
+Control is selectable in Keyboard settings. Command-number shortcuts conflict
+with app shortcuts, for example browser tab selection; select Control or disable
+jump-to-space shortcuts if you need those app commands.
 
 https://github.com/user-attachments/assets/29fc5d4c-aa4b-4233-bc74-f6e3110b75fb
 
@@ -51,10 +61,11 @@ Untested.
 
 ### Are any special permissions required to run this?
 
-FasterSwiper requires accessibility permissions to function. You can grant those
-permissions by going to Settings → Privacy & Security → Accessibility and adding
-`FasterSwiper.app`. If you build your own version using `bazel run`, you should
-grant permissions to `Terminal.app`.
+The fork still requires macOS permissions. Use the permission controls macOS
+presents for `FasterSwiper Command.app` (Accessibility, or Device Control/Data
+Access on supported macOS versions). A source build and matching bundle ID do
+not guarantee that permissions from an earlier build carry over. This local
+build does not grant permissions or bypass platform security; see [FORK.md](FORK.md).
 
 ### How does this work?
 
@@ -74,35 +85,18 @@ quadratic ease out over 200ms.
 
 ## Building
 
-FasterSwiper uses Bazel. Install Bazelisk with
-[Homebrew](https://formulae.brew.sh/formula/bazelisk):
+On Apple Silicon with full Xcode installed, build and test locally without
+installing, signing the app bundle or launching it:
 
 ```bash
-brew install bazelisk
+./tools/build-command.sh
 ```
 
-Install [the full version of Xcode](https://developer.apple.com/xcode/), the
-command-line tools are not supported by Bazel. Ensure that `xcode-select`
-reports a path under `/Applications`:
-
-```bash
-% xcode-select -p
-/Applications/Xcode.app/Contents/Developer
-```
-
-> [!TIP]
-> If you ran `bazel run` or `bazel build` before installing the full version of
-> Xcode, you may need to clean up Bazel's cache before builds will succeed:
->
-> ```bash
-> bazel clean --expunge
-> ```
-
-Then, you can build and run the app in Terminal:
-
-```bash
-bazel run -c opt //src/app:FasterSwiper_app
-```
+The script bootstraps a checksum-pinned Bazel locally, uses a project-local
+cache, and sets `DEVELOPER_DIR` without changing `xcode-select`. It exports
+`artifacts/FasterSwiper Command.app` and a ZIP. Apple Silicon's linker emits an
+ad-hoc signature; there is no Developer ID signing or notarization. See
+[FORK.md](FORK.md) for exact commands and remaining manual acceptance checks.
 
 ## Contributing
 

@@ -19,6 +19,8 @@ xcodeproj(
 )
 
 exports_files([
+    "LICENSE",
+    "ATTRIBUTION.md",
     ".clang-format",
     ".clang-tidy",
 ])
